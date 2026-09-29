@@ -2,6 +2,7 @@ use pumpkin_data::BlockStateId;
 use pumpkin_data::block_properties::HorizontalFacing;
 use pumpkin_data::tag::Taggable;
 use pumpkin_data::{Block, block_properties::CactusLikeProperties, tag};
+use pumpkin_data::fluid::Fluid;
 use pumpkin_macros::pumpkin_block;
 use pumpkin_util::math::position::BlockPos;
 use pumpkin_world::tick::TickPriority;
@@ -75,15 +76,14 @@ fn can_place_at(block_accessor: &dyn BlockAccessor, block_pos: &BlockPos) -> boo
 
     if block_below.has_tag(&tag::Block::MINECRAFT_SUPPORTS_SUGAR_CANE) {
         for direction in HorizontalFacing::all() {
-            let block = block_accessor.get_block(&block_pos.down().offset(direction.to_offset()));
-            // TODO: use fluid
-            if block.has_tag(&tag::Fluid::MINECRAFT_SUPPORTS_SUGAR_CANE_ADJACENTLY)
-                && block.has_tag(&tag::Block::MINECRAFT_SUPPORTS_SUGAR_CANE_ADJACENTLY)
-            {
-                return true;
+            let adjacent_pos = block_pos.down().offset(direction.to_offset());
+            let adjacent_block_state_id = block_accessor.get_block_state_id(&adjacent_pos);
+            if let Some(fluid) = Fluid::from_state_id(adjacent_block_state_id) {
+                if fluid.matches_type(&Fluid::WATER) {
+                    return true;
+                }
             }
         }
     }
-
     false
 }
